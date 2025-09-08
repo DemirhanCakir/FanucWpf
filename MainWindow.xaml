@@ -34,13 +34,32 @@
             <TextBox Text="{Binding MessageToSend, UpdateSourceTrigger=PropertyChanged}" Width="300"/>
             <Button Content="Send" Command="{Binding SendMessageCommand}" Margin="10,0,0,0" Padding="10,2"/>
             <Button Content="Set" Command="{Binding SetRegisterCommand}" Margin="10,0,0,0" Padding="10,2"/>
-            <Button Content="Get" Command="{Binding GetPositionRegister}" Margin="10,0,0,0" Padding="10,2"/>
+            <Button Content="Get" Command="{Binding GetRegisterCommand}" Margin="10,0,0,0" Padding="10,2"/>
             <Button Content="GetPos" Command="{Binding GetPositionRegister}" Margin="10,0,0,0" Padding="10,2"/>
         </StackPanel>
 
         <!-- Log View -->
         <GroupBox Grid.Row="2" Header="Communication Log">
-            <ListView ItemsSource="{Binding LogEntries}"/>
+            <DockPanel>
+                <ListView ItemsSource="{Binding LogEntries}" 
+                          Name="LogListView"
+                          ScrollViewer.CanContentScroll="True"
+                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling">
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+            </DockPanel>
         </GroupBox>
 
         <!-- Status Bar -->

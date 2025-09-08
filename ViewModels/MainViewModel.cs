@@ -17,10 +17,10 @@ namespace FanucWpf.ViewModels
         private readonly Dispatcher _dispatcher; // UI thread'e erişim için
 
         private string _ipAddress = "127.0.0.1"; // Varsayılan IP
-        private int _port = 60008; // Dokümandaki örnek port
         private bool _isConnected;
         private string _messageToSend = "STATUS?";
         private string _statusText = "Ready";
+        private string message;
 
         public string IpAddress
         {
@@ -28,11 +28,6 @@ namespace FanucWpf.ViewModels
             set { _ipAddress = value; OnPropertyChanged(nameof(IpAddress)); }
         }
 
-        public int Port
-        {
-            get => _port;
-            set { _port = value; OnPropertyChanged(nameof(Port)); }
-        }
 
         public bool IsConnected
         {
@@ -64,49 +59,57 @@ namespace FanucWpf.ViewModels
         public MainViewModel()
         {
             _dispatcher = Dispatcher.CurrentDispatcher;
-            _robotService = new FanucInterface();
+            _robotService = new FanucInterface(IpAddress);
 
-            _robotService.LogMessage += (msg) => Log(msg);
-            _robotService.MessageReceived += (msg) => Log($"[ROBOT] -> {msg}");
-            _robotService.ConnectionStateChanged += (state) => IsConnected = state;
+            //_robotService.LogMessage += (msg) => Log(msg);
+            //_robotService.MessageReceived += (msg) => Log($"[ROBOT] -> {msg}");
+            //_robotService.ConnectionStateChanged += (state) => IsConnected = state;
 
-            ConnectCommand = new RelayCommand(async (_) => await ConnectAsync(), (_) => !IsConnected);
-            DisconnectCommand = new RelayCommand(async (_) => await DisconnectAsync(), (_) => IsConnected);
-            SendMessageCommand = new RelayCommand(async (_) => await SendMessageAsync(), (_) => IsConnected);
-            GetRegisterCommand = new RelayCommand(async (_) => await GetRegisterAsync(), (_) => IsConnected);
-            SetRegisterCommand = new RelayCommand(async (_) => await SetRegisterAsync(), (_) => IsConnected);
-            GetPositionRegister = new RelayCommand(async (_) => await GetPositionAsync(), (_) => IsConnected);
+            ConnectCommand = new RelayCommand(async (_) => Connect(), (_) => !IsConnected);
+            DisconnectCommand = new RelayCommand(async (_) => Disconnect(), (_) => IsConnected);
+            //SendMessageCommand = new RelayCommand(async (_) => await SendMessageAsync(), (_) => IsConnected);
+            GetRegisterCommand = new RelayCommand(async (_) => RefreshData(), (_) => IsConnected);
+            SetRegisterCommand = new RelayCommand(async (_) => SetRegisterAsync(), (_) => IsConnected);
+            //GetPositionRegister = new RelayCommand(async (_) => await GetPositionAsync(), (_) => IsConnected);
         }
 
-        private async Task ConnectAsync()
+        private void Connect()
         {
-            await _robotService.ConnectAsync(IpAddress, Port);
-        }
-
-        private async Task DisconnectAsync()
-        {
-            await _robotService.DisconnectAsync();
-        }
-
-        private async Task SendMessageAsync()
-        {
-            if (!string.IsNullOrWhiteSpace(MessageToSend))
+            try
             {
-                await _robotService.SendMessageAsync(MessageToSend);
+                _robotService.InitAndConnect();
+                IsConnected = true;
+            }
+            catch (Exception ex)
+            {
+                Log($"Connection error: {ex.Message}");
             }
         }
-        private async Task SetRegisterAsync()
+
+        private void Disconnect()
         {
-            await _robotService.SetRegisterValue(24, 123);
+            try
+            {
+                _robotService.Disconnect();
+                IsConnected = false;
+            }
+            catch (Exception ex)
+            {
+                Log($"Disconnection error: {ex.Message}");
+            }
         }
-        private async Task GetRegisterAsync()
+
+        private void RefreshData()
         {
-            await _robotService.GetRegisterValue(24);
+            String Message = _robotService.RefreshData();
+            Log(Message);
         }
-        private async Task GetPositionAsync()
+        private void SetRegisterAsync()
         {
-            await _robotService.GetPositionRegister(1);
+            _robotService.SetNumRegs();
         }
+        
+        
 
         private void Log(string message)
         {
@@ -115,10 +118,10 @@ namespace FanucWpf.ViewModels
             {
                 StatusText = message;
                 LogEntries.Insert(0, $"{System.DateTime.Now:HH:mm:ss} - {message}");
-                if (LogEntries.Count > 200) // Log listesini çok büyütme
-                {
-                    LogEntries.RemoveAt(LogEntries.Count - 1);
-                }
+                //if (LogEntries.Count > 200) // Log listesini çok büyütme
+                //{
+                //    LogEntries.RemoveAt(LogEntries.Count - 1);
+                //}
             });
         }
 
